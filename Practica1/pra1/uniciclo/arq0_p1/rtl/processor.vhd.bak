@@ -1,0 +1,126 @@
+--------------------------------------------------------------------------------
+-- Procesador MIPS con pipeline curso Arquitectura 2019-2020
+--
+-- (INCLUIR AQUI LA INFORMACION SOBRE LOS AUTORES)
+--
+--------------------------------------------------------------------------------
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
+
+entity processor is
+   port(
+      Clk         : in  std_logic; -- Reloj activo en flanco subida
+      Reset       : in  std_logic; -- Reset asincrono activo nivel alto
+      -- Instruction memory
+      IAddr      : out std_logic_vector(31 downto 0); -- Direccion Instr
+      IDataIn    : in  std_logic_vector(31 downto 0); -- Instruccion leida
+      -- Data memory
+      DAddr      : out std_logic_vector(31 downto 0); -- Direccion
+      DRdEn      : out std_logic;                     -- Habilitacion lectura
+      DWrEn      : out std_logic;                     -- Habilitacion escritura
+      DDataOut   : out std_logic_vector(31 downto 0); -- Dato escrito
+      DDataIn    : in  std_logic_vector(31 downto 0)  -- Dato leido
+   );
+end processor;
+
+architecture rtl of processor is 
+	component control_unit
+		port(
+		-- Entrada = codigo de operacion en la instruccion:
+		OpCode  : in  std_logic_vector (5 downto 0);
+		-- Seniales para el PC
+		Branch : out  std_logic; -- 1 = Ejecutandose instruccion branch
+		Jump  : out  std_logic; -- 1 = Ejecutandose instruccion jump
+		-- Seniales relativas a la memoria
+		MemToReg : out  std_logic; -- 1 = Escribir en registro la salida de la mem.
+		MemWrite : out  std_logic; -- Escribir la memoria
+		MemRead  : out  std_logic; -- Leer la memoria
+		-- Seniales para la ALU
+		ALUSrc : out  std_logic;                     -- 0 = oper.B es registro, 1 = es valor inm.
+		ALUOp  : out  std_logic_vector (2 downto 0); -- Tipo operacion para control de la ALU
+		-- Seniales para el GPR
+		RegWrite : out  std_logic; -- 1=Escribir registro
+		RegDst   : out  std_logic  -- 0=Reg. destino es rt, 1=rd
+		);
+	end component;
+	 
+	component alu_control
+		port(
+		ALUOp  : in std_logic_vector (2 downto 0); -- Codigo de control desde la unidad de control
+		Funct  : in std_logic_vector (5 downto 0); -- Campo "funct" de la instruccion
+		-- Salida de control para la ALU:
+		ALUControl : out std_logic_vector (3 downto 0) -- Define operacion a ejecutar por la ALU
+		);
+	end component;
+	
+	component reg_bank
+		port(
+		Clk   : in std_logic; -- Reloj activo en flanco de subida
+		Reset : in std_logic; -- Reset asíncrono a nivel alto
+		A1    : in std_logic_vector(4 downto 0);   -- Dirección para el puerto Rd1
+		Rd1   : out std_logic_vector(31 downto 0); -- Dato del puerto Rd1
+		A2    : in std_logic_vector(4 downto 0);   -- Dirección para el puerto Rd2
+		Rd2   : out std_logic_vector(31 downto 0); -- Dato del puerto Rd2
+		A3    : in std_logic_vector(4 downto 0);   -- Dirección para el puerto Wd3
+		Wd3   : in std_logic_vector(31 downto 0);  -- Dato de entrada Wd3
+		We3   : in std_logic -- Habilitación de la escritura de Wd3
+		);
+	end component;
+	
+	component alu
+		port(
+		OpA     : in  std_logic_vector (31 downto 0); -- Operando A
+		OpB     : in  std_logic_vector (31 downto 0); -- Operando B
+		Control : in  std_logic_vector ( 3 downto 0); -- Codigo de control=op. a ejecutar
+		Result  : out std_logic_vector (31 downto 0); -- Resultado
+		ZFlag   : out std_logic                       -- Flag Z
+		);
+	end component;
+	
+	signal sys_OpCode: std_logic_vector (5 downto 0);
+	signal sys_Branch : std_logic;
+	signal sys_Jump  : std_logic; 
+	signal sys_MemToReg : std_logic;
+	signal sys_MemWrite : std_logic;
+	signal sys_MemRead  : std_logic;
+	signal sys_ALUSrc : std_logic;
+	signal sys_ALUOp  : std_logic_vector (2 downto 0);
+	signal sys_RegWrite : std_logic;
+	signal sys_RegDst   : std_logic;
+		
+	signal PC: std_logic_vector(31 downto 0);
+	
+begin
+Pcontrol_unit: control_unit
+port map(
+	OpCode => sys_OpCode,
+	Branch => sys_Branch,
+	Jump => sys_Jump,
+	MemToReg => sys_MemToReg,
+	MemWrite => sys_MemWrite,
+	MemRead => sys_MemRead,
+	ALUSrc => sys_ALUSrc,
+	ALUOp => sys_ALUOp,
+	RegWrite => sys_RegWrite,
+	RegDst => sys_RegDst
+	
+);
+	
+
+process(clk, reset)
+begin
+if reset = '1' then
+	PC <= (others => '0');
+--elsif reset = '0' then
+	
+
+end if;
+end process;
+
+--extended_inst(15 downto 0) <= intr(15 downto 0);
+--extended_inst(31 downto 16) <= (others => intr(15));
+
+end architecture;
+
